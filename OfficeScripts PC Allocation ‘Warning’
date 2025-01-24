@@ -1,0 +1,49 @@
+function main(workbook: ExcelScript.Workbook) {
+  let sheet = workbook.getActiveWorksheet();
+  let statusCell = sheet.getRange("E25");
+  let status = statusCell.getValue() as number;
+
+  if (status === 2) {
+    // User clicked "Mark Complete"
+    showWarning(); // A function to display the warning
+    statusCell.setValue(1); // Set status to 1
+    startTimer(sheet); // Start the timer function
+  } else if (status === 1) {
+    // User clicked "Allow"
+    authorizeForm(sheet);
+    statusCell.setValue(0); // Mark process complete
+  }
+}
+
+function startTimer(sheet: ExcelScript.Worksheet) {
+  // Simulating a timer with Power Automate or stored timestamps
+  const timerCell = sheet.getRange("F1"); // Hidden cell to store the timer start time
+  const currentTime = new Date().getTime(); // Current timestamp in milliseconds
+  timerCell.setValue(currentTime); // Set start time
+
+  // Power Automate can call this function repeatedly
+  checkTimer(sheet);
+}
+
+function checkTimer(sheet: ExcelScript.Worksheet) {
+  const timerCell = sheet.getRange("F1");
+  const statusCell = sheet.getRange("E25");
+  const currentTime = new Date().getTime();
+  const startTime = timerCell.getValue() as number;
+  const status = statusCell.getValue() as number;
+
+  // Check if 30 seconds have passed and status is still 1
+  if (status === 1 && (currentTime - startTime) >= 30000) {
+    statusCell.setValue(2); // Revert status to 2
+  }
+}
+
+function authorizeForm(sheet: ExcelScript.Worksheet) {
+  // Lock the form and mark it as completed
+  sheet.getRange("A1:Z100").getFormat().setLocked(true);
+  sheet.getRange("G1").setValue("Form Authorized and Locked");
+}
+
+function showWarning() {
+  console.log("Warning: Form requires authorization.");
+}
