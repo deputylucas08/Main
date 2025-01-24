@@ -23,6 +23,7 @@ function startTimer(sheet: ExcelScript.Worksheet) {
 
   // Power Automate can call this function repeatedly
   checkTimer(sheet);
+//instead of power automate, delay the time checking function
 }
 
 function checkTimer(sheet: ExcelScript.Worksheet) {
