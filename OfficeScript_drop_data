@@ -1,0 +1,36 @@
+function main(workbook: ExcelScript.Workbook,
+  arrayfromflow: arrayofdata[],
+  sheetname: string 
+) {
+  let selectedSheet = workbook.getWorksheet(sheetname) || workbook.addWorksheet(sheetname);
+  
+  // Clear the used range but keep formatting
+  let usedRange = selectedSheet.getUsedRange();
+  if (usedRange) {
+    usedRange.clear(ExcelScript.ClearApplyTo.contents);
+  }
+
+  // Populate headers (optional, if you want static headers)
+  const headers = [["ID", "FirstName", "LastName", "Address", "PostCode", "Email"]];
+  selectedSheet.getRange("A1:F1").setValues(headers);
+
+  // Convert array of objects into a 2D array for batch writing
+  const dataArray = arrayfromflow.map(item => [
+    item.ID, item.FirstName, item.LastName, item.Address, item.PostCode, item.Email
+  ]);
+
+  // Write the entire dataset starting from row 2
+  if (dataArray.length > 0) {
+    selectedSheet.getRange(`A2:F${dataArray.length + 1}`).setValues(dataArray);
+  }
+}
+
+// Defining Interface
+interface arrayofdata {
+  ID: string,
+  FirstName: string,
+  LastName: string,
+  Address: string,
+  PostCode: string,
+  Email: string
+}
