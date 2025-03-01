@@ -1,0 +1,47 @@
+function main(workbook: ExcelScript.Workbook,
+  arrayfromflow: arrayofdata[],
+  sheetname1: string,
+  arrayfromflow2: arrayofdata[],
+  sheetname2: string
+) {
+  // Process first sheet
+  updateSheet(workbook, sheetname1, arrayfromflow);
+  
+  // Process second sheet
+  updateSheet(workbook, sheetname2, arrayfromflow2);
+}
+
+// Function to update a sheet
+function updateSheet(workbook: ExcelScript.Workbook, sheetname: string, dataArray: arrayofdata[]) {
+  let selectedSheet = workbook.getWorksheet(sheetname) || workbook.addWorksheet(sheetname);
+
+  // Clear contents but keep formatting
+  let usedRange = selectedSheet.getUsedRange();
+  if (usedRange) {
+    usedRange.clear(ExcelScript.ClearApplyTo.contents);
+  }
+
+  // Headers
+  const headers = [["ID", "FirstName", "LastName", "Address", "PostCode", "Email"]];
+  selectedSheet.getRange("A1:F1").setValues(headers);
+
+  // Convert object array to 2D array
+  const formattedData = dataArray.map(item => [
+    item.ID, item.FirstName, item.LastName, item.Address, item.PostCode, item.Email
+  ]);
+
+  // Write data if array isn't empty
+  if (formattedData.length > 0) {
+    selectedSheet.getRange(`A2:F${formattedData.length + 1}`).setValues(formattedData);
+  }
+}
+
+// Interface
+interface arrayofdata {
+  ID: string,
+  FirstName: string,
+  LastName: string,
+  Address: string,
+  PostCode: string,
+  Email: string
+}
