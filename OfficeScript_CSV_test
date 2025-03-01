@@ -1,0 +1,41 @@
+function main(workbook: ExcelScript.Workbook) {
+  // Mock array simulating Power Automate's input
+  let AllCSVsArray = [
+    {
+      "name": "Audit AWM.csv",
+      "data": [
+        { "ID": "1", "FirstName": "Alice", "LastName": "Brown", "Address": "123 Main St", "PostCode": "12345", "Email": "alice@example.com" },
+        { "ID": "2", "FirstName": "Bob", "LastName": "Smith", "Address": "456 Elm St", "PostCode": "67890", "Email": "bob@example.com" }
+      ]
+    },
+    {
+      "name": "Audit North.csv",
+      "data": [
+        { "ID": "3", "FirstName": "Charlie", "LastName": "Davis", "Address": "789 Pine St", "PostCode": "54321", "Email": "charlie@example.com" },
+        { "ID": "4", "FirstName": "Dana", "LastName": "White", "Address": "321 Oak St", "PostCode": "98765", "Email": "dana@example.com" }
+      ]
+    }
+  ];
+
+  // Loop through each dataset in AllCSVsArray
+  AllCSVsArray.forEach(file => {
+    let sheetName = file.name.replace(".csv", ""); // Remove ".csv" from filename
+    let sheet = workbook.getWorksheet(sheetName) || workbook.addWorksheet(sheetName);
+
+    // Clear previous content but keep formatting
+    let usedRange = sheet.getUsedRange();
+    if (usedRange) {
+      usedRange.clear(ExcelScript.ClearApplyTo.contents);
+    }
+
+    // Extract headers dynamically from JSON keys
+    let headers = Object.keys(file.data[0]);
+    sheet.getRange(`A1:${String.fromCharCode(65 + headers.length - 1)}1`).setValues([headers]);
+
+    // Convert JSON objects to 2D array format for Excel
+    let formattedData = file.data.map(row => headers.map(header => row[header] || ""));
+    if (formattedData.length > 0) {
+      sheet.getRange(`A2:${String.fromCharCode(65 + headers.length - 1)}${formattedData.length + 1}`).setValues(formattedData);
+    }
+  });
+}
