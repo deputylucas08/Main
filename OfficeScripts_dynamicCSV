@@ -1,0 +1,22 @@
+function main(workbook: ExcelScript.Workbook, csvData: any[]) {
+  csvData.forEach((fileData, index) => {
+    let sheetname = fileData.name.replace(".csv", ""); // Use filename as sheet name
+    let selectedSheet = workbook.getWorksheet(sheetname) || workbook.addWorksheet(sheetname);
+    
+    // Clear contents but keep formatting
+    let usedRange = selectedSheet.getUsedRange();
+    if (usedRange) {
+      usedRange.clear(ExcelScript.ClearApplyTo.contents);
+    }
+
+    // Headers (from JSON keys)
+    let headers = Object.keys(fileData.data[0]);
+    selectedSheet.getRange(`A1:${String.fromCharCode(65 + headers.length - 1)}1`).setValues([headers]);
+
+    // Write data
+    const formattedData = fileData.data.map(item => headers.map(header => item[header] || ""));
+    if (formattedData.length > 0) {
+      selectedSheet.getRange(`A2:${String.fromCharCode(65 + headers.length - 1)}${formattedData.length + 1}`).setValues(formattedData);
+    }
+  });
+}
