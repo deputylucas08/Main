@@ -1,22 +1,27 @@
-function main(workbook: ExcelScript.Workbook, csvData: any[]) {
-  csvData.forEach((fileData, index) => {
-    let sheetname = fileData.name.replace(".csv", ""); // Use filename as sheet name
-    let selectedSheet = workbook.getWorksheet(sheetname) || workbook.addWorksheet(sheetname);
-    
-    // Clear contents but keep formatting
-    let usedRange = selectedSheet.getUsedRange();
+function main(workbook: ExcelScript.Workbook, AllCSVsArray: { name: string, data: { [key: string]: string }[] }[]) {
+  // Loop through each dataset in AllCSVsArray
+  AllCSVsArray.forEach(file => {
+    let sheetName = file.name.replace(".csv", ""); // Remove ".csv" from filename
+    let sheet = workbook.getWorksheet(sheetName) || workbook.addWorksheet(sheetName);
+
+    // Clear only contents (preserve formatting)
+    let usedRange = sheet.getUsedRange();
     if (usedRange) {
       usedRange.clear(ExcelScript.ClearApplyTo.contents);
     }
 
-    // Headers (from JSON keys)
-    let headers = Object.keys(fileData.data[0]);
-    selectedSheet.getRange(`A1:${String.fromCharCode(65 + headers.length - 1)}1`).setValues([headers]);
+    // Extract headers dynamically
+    let headers = Object.keys(file.data[0]);
+    let headerRange = sheet.getRange(`A1:${String.fromCharCode(65 + headers.length - 1)}1`);
+    headerRange.setValues([headers]);
 
-    // Write data
-    const formattedData = fileData.data.map(item => headers.map(header => item[header] || ""));
+    // Convert JSON objects to 2D array format
+    let formattedData = file.data.map(row => headers.map(header => row[header] || ""));
+    
+    // Write new data if available
     if (formattedData.length > 0) {
-      selectedSheet.getRange(`A2:${String.fromCharCode(65 + headers.length - 1)}${formattedData.length + 1}`).setValues(formattedData);
+      let dataRange = sheet.getRange(`A2:${String.fromCharCode(65 + headers.length - 1)}${formattedData.length + 1}`);
+      dataRange.setValues(formattedData);
     }
   });
 }
