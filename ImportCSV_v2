@@ -1,0 +1,22 @@
+function main(workbook: ExcelScript.Workbook, allCSVsArray: CSVData[]) {
+  allCSVsArray.forEach(csvFile => {
+    let sheet = workbook.getWorksheet(csvFile.Name) || workbook.addWorksheet(csvFile.Name);
+    sheet.getRange().clear(); // Clears existing data while preserving formatting
+
+    if (csvFile.Data.length === 0) return; // Skip if there's no data
+
+    // Extract dynamic column headers from the first row
+    const columnHeaders = Object.keys(csvFile.Data[0]);
+    sheet.getRange(`A1:${String.fromCharCode(65 + columnHeaders.length - 1)}1`).setValues([columnHeaders]);
+
+    // Convert data objects to 2D array
+    const values = csvFile.Data.map(row => columnHeaders.map(col => row[col] || "")); // Fills missing values with empty string
+    sheet.getRange(`A2`).getResizedRange(values.length, columnHeaders.length).setValues(values);
+  });
+}
+
+// Interface for Power Automate compatibility
+interface CSVData {
+  Name: string;
+  Data: { [key: string]: string }[]; // Dynamic object where keys are column headers
+}
