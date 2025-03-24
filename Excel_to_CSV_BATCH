@@ -1,0 +1,33 @@
+function main(workbook: ExcelScript.Workbook, allCSVsArray: CSVData[]) {
+  const BATCH_SIZE = 10000; // Max rows per request to avoid 5MB limit
+
+  allCSVsArray.forEach(csvFile => {
+    let sheet = workbook.getWorksheet(csvFile.Name) || workbook.addWorksheet(csvFile.Name);
+    sheet.getRange().clear(); // Clears existing data while preserving formatting
+
+    if (csvFile.Data.length === 0) return; // Skip empty datasets
+
+    // Extract headers from the first row
+    const columnHeaders = Object.keys(csvFile.Data[0]);
+    const columnCount = columnHeaders.length;
+    
+    // Write column headers
+    sheet.getRange("A1").getResizedRange(1, columnCount).setValues([columnHeaders]);
+
+    // Convert data to 2D array
+    const values = csvFile.Data.map(row => columnHeaders.map(col => row[col] || ""));
+
+    // Write data in batches to avoid timeout
+    for (let startRow = 0; startRow < values.length; startRow += BATCH_SIZE) {
+      let endRow = Math.min(startRow + BATCH_SIZE, values.length);
+      let range = sheet.getRange(`A${startRow + 2}`).getResizedRange(endRow - startRow, columnCount);
+      range.setValues(values.slice(startRow, endRow));
+    }
+  });
+}
+
+// Interface for Power Automate compatibility
+interface CSVData {
+  Name: string;
+  Data: { [key: string]: string }[]; // Object keys represent column headers
+}
