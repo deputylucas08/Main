@@ -1,0 +1,12 @@
+async function run() {
+  await Excel.run(async (context) => {
+    const sheet = context.workbook.worksheets.getActiveWorksheet();
+    for (let index = 1; index < 100000; index++) {
+      const cell = sheet.getRangeByIndexes(index, 1, 1, 1);
+      cell.values = [['42']];
+
+      await context.sync();
+    }
+    await context.sync();
+  });
+}
