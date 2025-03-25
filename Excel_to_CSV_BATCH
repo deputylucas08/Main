@@ -1,50 +1,50 @@
-async function main(workbook: ExcelScript.Workbook, allCSVsArray: CSVData[]) {
-  const BATCH_SIZE = 5000; // Adjust batch size as necessary
-  const DELAY_SECONDS = 3; // Delay between batches in seconds
+async function main(workbook: ExcelScript.Workbook) {
+  const AllCSVsArray: CSVData[] = [
+    {
+      Name: "SalesData",
+      Data: [
+        { Date: "2025-03-01", Product: "Laptop", Sales: "1200", Quantity: "3" },
+        { Date: "2025-03-02", Product: "Tablet", Sales: "800", Quantity: "2" },
+        { Date: "2025-03-03", Product: "Smartphone", Sales: "500", Quantity: "1" },
+      ],
+    },
+    {
+      Name: "EmployeeRecords",
+      Data: [
+        { ID: "101", Name: "Alice", Role: "Engineer", Salary: "60000" },
+        { ID: "102", Name: "Bob", Role: "Analyst", Salary: "50000" },
+        { ID: "103", Name: "Charlie", Role: "Manager", Salary: "75000" },
+      ],
+    },
+  ];
 
-  // Function to simulate asynchronous pause
-  function sleep(seconds: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
-  }
+  for (const csvFile of AllCSVsArray) {
+    let sheet = workbook.getWorksheet(csvFile.Name) || workbook.addWorksheet(csvFile.Name);
+    sheet.getRange().clear(); // Clears existing data while preserving formatting
 
-  await Excel.run(async (context) => {
-    for (const csvFile of allCSVsArray) {
-      let sheet = workbook.getWorksheet(csvFile.Name) || workbook.addWorksheet(csvFile.Name);
-      sheet.getRange().clear(); // Clears existing data while preserving formatting
+    if (csvFile.Data.length === 0) continue; // Skip if there's no data
 
-      if (csvFile.Data.length === 0) continue; // Skip empty datasets
+    const columnHeaders = Object.keys(csvFile.Data[0]);
+    sheet.getRange(`A1:${String.fromCharCode(65 + columnHeaders.length - 1)}1`).setValues([columnHeaders]);
 
-      // Extract headers dynamically
-      const columnHeaders = Object.keys(csvFile.Data[0]);
-      const columnCount = columnHeaders.length;
+    // Convert data objects to 2D array
+    const values = csvFile.Data.map(row => columnHeaders.map(col => row[col] || "")); 
 
-      // Write column headers
-      let headerRange = sheet.getRange("A1").getResizedRange(1, columnCount);
-      headerRange.values = [columnHeaders];
+    // Define batch size to stay under 5MB limit (adjustable)
+    const batchSize = 5000;
 
-      // Convert data to 2D array
-      const values = csvFile.Data.map(row => columnHeaders.map(col => row[col] || ""));
+    for (let i = 0; i < values.length; i += batchSize) {
+      let batch = values.slice(i, i + batchSize);
+      let range = sheet.getRange(`A${i + 2}`).getResizedRange(batch.length, columnHeaders.length);
+      range.setValues(batch);
 
-      // Simulate async batch writing process
-      for (let startRow = 0; startRow < values.length; startRow += BATCH_SIZE) {
-        let endRow = Math.min(startRow + BATCH_SIZE, values.length);
-        let range = sheet.getRange(`A${startRow + 2}`).getResizedRange(endRow - startRow, columnCount);
-        range.values = values.slice(startRow, endRow);
-
-        // Flush changes and commit to Excel
-        await context.sync();
-        await context.flushAsync(); // Ensure the changes are committed
-        await context.sync(); // Wait for changes to be committed before proceeding
-
-        // Simulate delay between batches
-        await sleep(DELAY_SECONDS); // Add a delay of 3 seconds between batches
-      }
+      await workbook.sync(); // Flush the batch to Excel to prevent exceeding 5MB limit
     }
-  });
+  }
 }
 
 // Interface for Power Automate compatibility
 interface CSVData {
   Name: string;
-  Data: { [key: string]: string }[]; // Object keys represent column headers
+  Data: { [key: string]: string }[]; // Dynamic object where keys are column headers
 }
